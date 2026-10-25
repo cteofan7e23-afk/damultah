@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="id" class="is-locked">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>For You, Damai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Quicksand:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#cfe6d3;
+    --bg-2:#b9d9be;
+    --card:#f8fbf4;
+    --card-line:#dfe9de;
+    --ink:#2e4436;
+    --ink-soft:#5b6f60;
+    --accent:#6fa37b;
+    --accent-dark:#4c7a5b;
+    --accent-bright:#4c7a5b;
+    --text-on-bg:#2e4436;
+    --text-on-bg-soft:#5b6f60;
+    --rose:#e7a6b0;
+    --gold:#c9a86a;
+    --shadow: 0 20px 50px -20px rgba(46,68,54,0.35);
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    padding:0;
+    min-height:100vh;
+    font-family:'Quicksand', sans-serif;
+    color:var(--text-on-bg);
+    background:
+      radial-gradient(circle at 15% 10%, rgba(255,255,255,0.5), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(255,255,255,0.35), transparent 45%),
+      linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    overflow-x:hidden;
+  }
+
+  /* locked while the secret-code screen is showing: no scrolling until it's solved */
+  html.is-locked, html.is-locked body{
+    overflow:hidden;
+    height:100vh;
+  }
+
+  .screen{
+    min-height:100vh;
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 18px;
+    position:relative;
+  }
+
+  .hidden{ display:none !important; }
+
+  /* ---------- floating petals background ---------- */
+  .petal-field{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    overflow:hidden;
+    z-index:0;
+  }
+  .petal{
+    position:absolute;
+    top:-40px;
+    font-size:18px;
+    opacity:0.55;
+    animation: drift linear infinite;
+    filter: drop-shadow(0 2px 4px rgba(46,68,54,0.15));
+  }
+  @keyframes drift{
+    0%{ transform:translateY(-5vh) translateX(0) rotate(0deg); }
+    100%{ transform:translateY(110vh) translateX(30px) rotate(200deg); }
+  }
+
+  /* ================= LOCK SCREEN ================= */
+  #lock-screen .card{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-width:380px;
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:28px;
+    padding:38px 28px 30px;
+    box-shadow:var(--shadow);
+    text-align:center;
+  }
+
+  .eyebrow{
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    font-size:11px;
+    font-weight:700;
+    color:var(--accent-dark);
+    margin:0 0 6px;
+  }
+
+  .lock-icon{
+    font-size:30px;
+    margin-bottom:6px;
+    display:inline-block;
+  }
+
+  #lock-screen h1{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-weight:600;
+    font-size:clamp(24px, 6vw, 30px);
+    margin:0 0 4px;
+    color:var(--ink);
+  }
+
+  .lock-sub{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    margin:0 0 22px;
+  }
+
+  .dots{
+    display:flex;
+    justify-content:center;
+    gap:9px;
+    margin-bottom:24px;
+    flex-wrap:wrap;
+  }
+  .dot{
+    width:13px;
+    height:13px;
+    border-radius:50%;
+    border:1.5px solid var(--accent);
+    background:transparent;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .dot.filled{
+    background:var(--accent);
+    transform:scale(1.08);
+  }
+
+  .dots.shake{
+    animation: shake .4s ease;
+  }
+  @keyframes shake{
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-8px); }
+    40%{ transform:translateX(8px); }
+    60%{ transform:translateX(-6px); }
+    80%{ transform:translateX(6px); }
+  }
+
+  .keypad{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:11px;
+    margin-bottom:18px;
+  }
+  .key{
+    font-family:'JetBrains Mono', monospace;
+    font-size:18px;
+    font-weight:600;
+    color:var(--ink);
+    background:#eef5ec;
+    border:1px solid var(--card-line);
+    border-radius:16px;
+    padding:14px 0;
+    cursor:pointer;
+    transition:transform .08s ease, background .15s ease, box-shadow .15s ease;
+    user-select:none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .key:hover{ background:#e3efe1; }
+  .key:active{ transform:scale(0.94); background:var(--accent); color:#fff; }
+  .key.func{
+    color:var(--accent-dark);
+    font-size:15px;
+    font-family:'Quicksand', sans-serif;
+    font-weight:700;
+  }
+
+  .hint{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:4px 0 0;
+    letter-spacing:.02em;
+  }
+  .hint b{
+    color:var(--accent-dark);
+    font-weight:700;
+    letter-spacing:.06em;
+  }
+
+  /* ================= PARTY BURST ================= */
+  #party-screen{
+    z-index:1;
+  }
+  .burst-wrap{
+    position:relative;
+    text-align:center;
+  }
+  .cake{
+    font-size:88px;
+    animation: pop-in .55s cubic-bezier(.2,1.4,.4,1) both;
+  }
+  @keyframes pop-in{
+    0%{ transform:scale(0) rotate(-15deg); opacity:0; }
+    60%{ transform:scale(1.15) rotate(4deg); opacity:1; }
+    100%{ transform:scale(1) rotate(0deg); opacity:1; }
+  }
+  .burst-text{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-weight:600;
+    font-size:clamp(20px, 5vw, 26px);
+    color:var(--accent-bright);
+    margin-top:14px;
+    opacity:0;
+    animation: fade-up .6s ease .35s forwards;
+  }
+  @keyframes fade-up{
+    from{ opacity:0; transform:translateY(10px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  .confetti-piece{
+    position:absolute;
+    top:-10%;
+    font-size:20px;
+    animation-name: fall;
+    animation-timing-function: linear;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+  }
+  @keyframes fall{
+    0%{ transform:translateY(0) rotate(0deg); opacity:1; }
+    100%{ transform:translateY(105vh) rotate(360deg); opacity:0.9; }
+  }
+
+  /* ================= MAIN CONTENT ================= */
+  #main-content{
+    display:block;
+    min-height:auto;
+    padding:0;
+  }
+  #main-content .content-wrap{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:64px 22px 40px;
+  }
+  .content-wrap{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-width:520px;
+    margin:0 auto;
+    text-align:center;
+  }
+
+  .reveal{
+    opacity:0;
+    transform:translateY(18px);
+    animation: reveal-up .8s cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  @keyframes reveal-up{
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .d1{ animation-delay:.05s; }
+  .d2{ animation-delay:.25s; }
+  .d3{ animation-delay:.45s; }
+  .d4{ animation-delay:.65s; }
+  .d5{ animation-delay:.85s; }
+
+  .special-day{
+    font-family:'Quicksand', sans-serif;
+    font-weight:700;
+    letter-spacing:.32em;
+    text-transform:uppercase;
+    font-size:clamp(11px, 2.6vw, 13px);
+    color:var(--accent-bright);
+    margin:0 0 14px;
+  }
+  .special-day::before,
+  .special-day::after{
+    content:"✿";
+    color:var(--rose);
+    margin:0 10px;
+    letter-spacing:0;
+  }
+
+  .headline{
+    font-family:'Playfair Display', serif;
+    font-weight:700;
+    line-height:1.18;
+    font-size:clamp(26px, 7.2vw, 44px);
+    margin:0 0 18px;
+    color:var(--text-on-bg);
+    text-wrap:balance;
+  }
+  .headline .name{
+    color:var(--accent-bright);
+  }
+  .headline .aka{
+    display:block;
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-weight:600;
+    font-size:.46em;
+    color:var(--text-on-bg-soft);
+    margin-top:8px;
+  }
+
+  .tagline{
+    font-size:clamp(15px, 3.6vw, 19px);
+    color:var(--text-on-bg);
+    margin:0 auto 26px;
+    max-width:380px;
+    font-weight:600;
+  }
+
+  .divider{
+    width:60px;
+    height:1px;
+    background:linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin:0 auto 26px;
+  }
+
+  .wish{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-size:clamp(15px, 3.4vw, 18px);
+    line-height:1.7;
+    color:var(--text-on-bg-soft);
+    max-width:380px;
+    margin:0 auto 30px;
+  }
+  .wish .heart{
+    color:var(--rose);
+    font-style:normal;
+  }
+
+  .dugong-note{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:100px;
+    padding:10px 20px;
+    font-size:13px;
+    color:var(--ink-soft);
+    box-shadow: var(--shadow);
+  }
+
+  .age-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:100px;
+    padding:7px 16px;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.08em;
+    color:var(--accent-dark);
+    box-shadow:var(--shadow);
+    margin-bottom:18px;
+  }
+
+  .scroll-hint{
+    position:absolute;
+    bottom:22px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--text-on-bg-soft);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    opacity:.8;
+    animation: bob 2s ease-in-out infinite;
+  }
+  @keyframes bob{
+    0%,100%{ transform:translate(-50%,0); }
+    50%{ transform:translate(-50%,6px); }
+  }
+
+  /* ================= SHARED SECTION STYLES ================= */
+  .section{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-width:520px;
+    margin:0 auto;
+    padding:70px 22px;
+    text-align:center;
+  }
+  .section-eyebrow{
+    font-family:'Quicksand', sans-serif;
+    font-weight:700;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    font-size:11px;
+    color:var(--accent-bright);
+    margin:0 0 6px;
+  }
+  .section-title{
+    font-family:'Playfair Display', serif;
+    font-weight:700;
+    font-style:italic;
+    font-size:clamp(24px, 6vw, 32px);
+    margin:0 0 10px;
+    color:var(--text-on-bg);
+  }
+  .section-note{
+    font-size:13.5px;
+    color:var(--text-on-bg-soft);
+    max-width:340px;
+    margin:0 auto 30px;
+    line-height:1.6;
+  }
+
+  /* ---- Digital bouquet ---- */
+  .bouquet{
+    position:relative;
+    width:100%;
+    max-width:260px;
+    height:220px;
+    margin:0 auto 8px;
+  }
+  .bouquet span{
+    position:absolute;
+    font-size:34px;
+    filter: drop-shadow(0 6px 8px rgba(46,68,54,0.18));
+  }
+  .bouquet .stem{
+    position:absolute;
+    left:50%;
+    bottom:0;
+    width:2px;
+    height:120px;
+    background:linear-gradient(var(--accent), transparent);
+    transform-origin:bottom center;
+  }
+
+  /* ---- Letter card ---- */
+  .letter-card{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:24px;
+    padding:34px 26px;
+    box-shadow:var(--shadow);
+    text-align:left;
+  }
+  .letter-to{
+    text-align:center;
+    font-size:13px;
+    color:var(--text-on-bg-soft);
+    margin:0 0 18px;
+  }
+  .letter-salute{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-weight:700;
+    font-size:19px;
+    color:var(--accent-dark);
+    margin:0 0 14px;
+  }
+  .letter-body{
+    font-size:14.5px;
+    line-height:1.85;
+    color:var(--ink);
+    margin:0 0 22px;
+  }
+  .letter-sign{
+    text-align:right;
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-size:15px;
+    color:var(--ink-soft);
+  }
+
+  /* ---- Photo frame ---- */
+  .photo-frame{
+    position:relative;
+    width:100%;
+    max-width:320px;
+    aspect-ratio:4/5;
+    margin:0 auto;
+    border-radius:20px;
+    overflow:hidden;
+    background:var(--card);
+    border:1px solid var(--card-line);
+    box-shadow:var(--shadow);
+  }
+  .photo-frame img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .photo-placeholder{
+    display:none;
+    position:absolute;
+    inset:0;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    color:var(--ink-soft);
+    font-size:13px;
+    text-align:center;
+    padding:20px;
+  }
+  .photo-placeholder .emoji{ font-size:34px; }
+  .photo-placeholder code{
+    background:#eef5ec;
+    padding:3px 8px;
+    border-radius:8px;
+    font-size:11px;
+    color:var(--accent-dark);
+  }
+
+  /* ---- Memories list ---- */
+  .memory-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    width:100%;
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:16px;
+    padding:18px 20px;
+    margin-bottom:14px;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+    transition:transform .15s ease, background .15s ease;
+    text-align:left;
+  }
+  .memory-bar:hover{ transform:translateY(-2px); background:#f2f8ef; }
+  .memory-bar:active{ transform:scale(0.98); }
+  .memory-bar-left{ display:flex; align-items:center; gap:12px; }
+  .memory-icon{ font-size:20px; }
+  .memory-title{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-weight:700;
+    font-size:16px;
+    color:var(--ink);
+    margin:0;
+  }
+  .memory-arrow{ color:var(--accent-dark); font-size:18px; }
+
+  /* ---- Music ---- */
+  .music-card{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:22px;
+    padding:26px 24px;
+    box-shadow:var(--shadow);
+  }
+  .music-title{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-weight:700;
+    font-size:18px;
+    color:var(--ink);
+    margin:0 0 2px;
+  }
+  .music-artist{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:0 0 18px;
+  }
+  audio{ width:100%; }
+  .audio-note{
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:10px;
+  }
+  .audio-note code{
+    background:#eef5ec;
+    padding:2px 7px;
+    border-radius:7px;
+    color:var(--accent-dark);
+  }
+
+  /* ---- Final section ---- */
+  .final-title{
+    font-family:'Playfair Display', serif;
+    font-weight:700;
+    line-height:1.35;
+    font-size:clamp(20px, 5.4vw, 28px);
+    color:var(--accent-bright);
+    margin:0 0 20px;
+  }
+  .final-body{
+    font-size:14.5px;
+    line-height:1.9;
+    color:var(--text-on-bg);
+    max-width:400px;
+    margin:0 auto;
+  }
+  .final-signoff{
+    margin-top:26px;
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-size:15px;
+    color:var(--text-on-bg-soft);
+  }
+
+  /* ================= SUBPAGES (Memory detail) ================= */
+  .subpage{
+    position:fixed;
+    inset:0;
+    z-index:50;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(255,255,255,0.5), transparent 40%),
+      linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    overflow-y:auto;
+    padding:26px 20px 70px;
+  }
+  .subpage-back{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:100px;
+    padding:9px 16px;
+    font-size:13px;
+    font-weight:700;
+    color:var(--accent-dark);
+    cursor:pointer;
+    box-shadow:var(--shadow);
+    margin-bottom:28px;
+  }
+  .subpage-inner{
+    max-width:480px;
+    margin:0 auto;
+    text-align:center;
+  }
+  .subpage-eyebrow{
+    font-size:12px;
+    letter-spacing:.1em;
+    color:var(--text-on-bg-soft);
+    margin:0 0 6px;
+  }
+  .subpage-title{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-weight:700;
+    font-size:clamp(20px, 5.5vw, 26px);
+    color:var(--text-on-bg);
+    margin:0 0 22px;
+  }
+  .subpage-body{
+    font-size:14.5px;
+    line-height:1.85;
+    color:var(--ink);
+    text-align:left;
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:20px;
+    padding:24px 22px;
+    box-shadow:var(--shadow);
+    margin-bottom:26px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="petal-field" id="petalField"></div>
+
+<!-- ============ LOCK SCREEN ============ -->
+<div class="screen" id="lock-screen">
+  <div class="card">
+    <p class="eyebrow">For You, Damai · Special Day</p>
+    <div class="lock-icon">🌷</div>
+    <h1>Enter the Secret Code</h1>
+    <p class="lock-sub">Hanya untuk orang yang tahu tanggal ini ✿</p>
+
+    <div class="dots" id="dots"></div>
+
+    <div class="keypad" id="keypad">
+      <button class="key" data-num="1">1</button>
+      <button class="key" data-num="2">2</button>
+      <button class="key" data-num="3">3</button>
+      <button class="key" data-num="4">4</button>
+      <button class="key" data-num="5">5</button>
+      <button class="key" data-num="6">6</button>
+      <button class="key" data-num="7">7</button>
+      <button class="key" data-num="8">8</button>
+      <button class="key" data-num="9">9</button>
+      <button class="key func" id="clearBtn">HAPUS</button>
+      <button class="key" data-num="0">0</button>
+      <button class="key func" id="backBtn">⌫</button>
+    </div>
+
+    <p class="hint">Hint: <b>damai, tanngal,bulan,tahun</b> 💚</p>
+  </div>
+</div>
+
+<!-- ============ PARTY BURST ============ -->
+<div class="screen hidden" id="party-screen">
+  <div class="burst-wrap">
+    <div class="cake">🎂🎉</div>
+    <p class="burst-text">HBDDD DAMAIIII 👀🥳🥳🥳🥳🥳</p>
+  </div>
+</div>
+
+<!-- ============ MAIN CONTENT ============ -->
+<div class="screen hidden" id="main-content">
+  <div class="content-wrap">
+    <p class="special-day reveal d1">Your Special Day</p>
+
+    <div class="reveal d2"><span class="age-badge">🎂 16th Birthday</span></div>
+
+    <h1 class="headline reveal d2">
+      HAPPY BIRTHDAY <span class="name">DAMAI</span>
+      <span class="aka">A.K.A my dugong (aneh sih jujur)</span>
+    </h1>
+
+    <div class="divider reveal d3"></div>
+
+    <p class="tagline reveal d3">Hari terspesial kamuuuu</p>
+
+    <p class="wish reveal d4">
+      "Wishing you happiness, good health,<br>
+      and all your dreams come true." <span class="heart">💚</span>
+    </p>
+
+    <div class="reveal d5">
+      <span class="dugong-note">🌿 selamat ulang tahun, dugong kesayangan 🌿</span>
+    </div>
+
+    <div class="scroll-hint reveal d5">
+      <span>Scroll</span>
+      <span>↓</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SECTION: DIGITAL BOUQUET ============ -->
+<div class="section" id="section-bouquet">
+  <p class="section-eyebrow">A Little Something</p>
+  <h2 class="section-title">Digital bouquet hehe</h2>
+
+  <div class="bouquet">
+    <span class="stem" style="left:30%; transform:rotate(-14deg);"></span>
+    <span class="stem" style="left:50%; height:130px;"></span>
+    <span class="stem" style="left:70%; transform:rotate(14deg);"></span>
+    <span style="left:8%;  bottom:95px;  font-size:30px;">🌸</span>
+    <span style="left:28%; bottom:150px; transform:rotate(-10deg);">🌷</span>
+    <span style="left:48%; bottom:175px; font-size:38px;">🌹</span>
+    <span style="left:66%; bottom:148px; transform:rotate(12deg);">🌼</span>
+    <span style="left:82%; bottom:100px; font-size:28px;">🌻</span>
+    <span style="left:20%; bottom:60px;  font-size:20px;">🍃</span>
+    <span style="left:60%; bottom:60px;  font-size:20px;">🍃</span>
+    <span style="left:40%; bottom:190px; font-size:16px;">✿</span>
+  </div>
+
+  <p class="section-note">Maaf baru bisa digital, soon pake yang asliii 🌷</p>
+</div>
+
+<!-- ============ SECTION: A LETTER FOR YOU ============ -->
+<div class="section" id="section-letter">
+    <p class="section-eyebrow">A Frame I Keep</p>
+  <h2 class="section-title">Eh siapa yaa inii??!!👀🤭</h2>
+  <p class="section-note">Kapan kapan ada foto bareng yaa, photobox gituu 📸</p>
+
+  <div class="photo-frame">
+    <!-- ganti src di bawah ini dengan foto kamu, contoh: photos/favorite.jpg -->
+    <img src="image/Damai.jpg" alt=""
+         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+    <div class="photo-placeholder">
+      <span class="emoji">📷</span>
+      <span>taruh foto favoritmu di sini</span>
+      <code>of course</code>
+    </div>
+  </div> <br>
+  <p class="section-eyebrow">From My Heart</p>
+  <h2 class="section-title">A Letter For You</h2>
+  <p class="letter-to">Untuk orang yang paling manis, cantik, dan paling baikk</p>
+
+  <div class="letter-card">
+    <p class="letter-salute">My dear Damai,</p>
+    <p class="letter-body">
+      <!-- ganti / tambahin kata-kata pribadi kamu di sini -->
+hallo Cin, eh damaii, hihii cumaan mau ngucapin aja selamat ulang tahun yaaa, semogaa di tahun ini kamu
+selalu diberi kesehatan, di kelilingi oleh orang yang positif,baik, perhatian ke kamu, dan peduli 
+kek kamu(kek aku👀🤭), dan jangan sering seringg tidur malamm gabaikk tau, dan makasii juga kamu 
+udah setia nemenin akuu
+yaa walaupun jujur kita udaa jarang chatan apalagi telponan, karena kitaa lagi sibuks sibuks nyaa sii its okayy, 
+kalau kitaa sudaa selo kita sering chat an aja lagii, sekalii lagii Selamat ulang tahunn, maaf kaloo belomm bisa
+lakuin yang terbaik untuk kamuuu, aku bakal improve diriku terus biar bisa lebii tau cara nge treat kamu lebih baik
+, Jujur I'm really glad I met you, dan juga aku feel so lucky to know someone like
+ you, GILA JAKSEL ABIS
+    </p>
+    <p class="letter-sign">wish all my love,<br>your someone 💚</p>
+  </div>
+</div>
+
+<!-- ============ SECTION: FAVORITE PHOTO ============ -->
+<div class="section" id="section-photo">
+
+</div>
+
+<!-- ============ SECTION: MEMORIES ============ -->
+
+<!-- ============ SECTION: MUSIC ============ -->
+<div class="section" id="section-music">
+  <p class="section-eyebrow">A Song For You</p>
+  <h2 class="section-title">Coba dengerin de</h2>
+
+  <div class="music-card">
+    <p class="music-title">SELAMAT HBD</p>
+    <p class="music-artist">DAMAI</p>
+
+    <audio controls preload="none">
+      <!-- ganti src di bawah dengan file lagu kamu, contoh: audio/birthday-girl.mp3 -->
+      <source src="audio/ultah semua dirayakan.aac">
+      Browser kamu tidak mendukung pemutar audio.
+    </audio>
+    <p class="audio-note">keren gasi <code>damn</code></p>
+  </div>
+
+  <p class="section-note" style="margin-top:26px;">Sekali lagi selamat ulang tahun yaa damaii 💚</p>
+</div>
+
+<!-- ============ SECTION: CLOSING ============ -->
+<div class="section" id="section-final">
+  <p class="final-title">
+    SEMOGA HIDUP KAMUU BISA SELALU BAHAGIA<br>
+    DAN SELALU TERPENUHI SAMA CINTAAA
+  </p>
+  <p class="final-body">
+   Kata kata lagi ni semoga ga bosen yaa sama kata kata gini,
+    Happy Birthday Damai, semoga tahun ini membawa hari-hari yang bahagia yaaa,
+    orang-orang yang tulus, baik, dan selalu ada di sekitar kamuu.
+    Semoga doa-doa kamu dikabulin di waktu-waktu yang baik,
+    dan kuharap kita bisa gapai mimpi kita bersamaaaa.
+  </p>
+  <p class="final-signoff">— with all my love, always 💚</p>
+</div>
+
+<!-- ============ SUBPAGE: FIRST WE MEET ============ -->
+<div class="subpage hidden" id="subpage-meet">
+  <div class="subpage-inner">
+    <button class="subpage-back" data-close="subpage-meet">‹ Kembali</button>
+    <p class="subpage-eyebrow">The Very Beginning</p>
+    <h3 class="subpage-title">Ini nih ✨</h3>
+    <div class="subpage-body">
+      <!-- ganti / tambahin cerita kamu di sini -->
+      Kata mamah aku, kita pertama kali ketemu di Ganjuran. Tapi jujur aku gabegitu
+      inget, cuma kata mamah aku itu pas kita kelas 3 SD tauu, tapii kalo yang bener bener kita bicara
+      terus kenal satu sama lain SMP sii
+    </div>
+
+    <div class="photo-frame" style="margin-bottom:10px;">
+      <!-- ganti src dengan foto kamu, contoh: photos/first-meet.jpg -->
+      <img src="photos/first-meet.jpg" alt="First we meet"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div class="photo-placeholder">
+        <span class="emoji">📷</span>
+        <span>taruh foto momen ini di sini</span>
+        <code>photos/first-meet.jpg</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SUBPAGE: OUR FIRST CONVERSATION ============ -->
+<div class="subpage hidden" id="subpage-convo">
+  <div class="subpage-inner">
+    <button class="subpage-back" data-close="subpage-convo">‹ Kembali</button>
+    <p class="subpage-eyebrow">A Magical Moment</p>
+    <h3 class="subpage-title">Awalnya tu gini 💬</h3>
+    <div class="subpage-body">
+      <!-- ganti / tambahin cerita kamu di sini -->
+      Kalo gasalah tu di RL kita bahas tentang nilai, terus kita ngalir aja deh
+      pembahasannya.
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------------- Petals background ----------------
+  const petalEmojis = ["🌸","🌿","🍃","✿","🌷"];
+  const petalField = document.getElementById('petalField');
+  const PETAL_COUNT = 16;
+  for(let i=0;i<PETAL_COUNT;i++){
+    const p = document.createElement('span');
+    p.className = 'petal';
+    p.textContent = petalEmojis[Math.floor(Math.random()*petalEmojis.length)];
+    p.style.left = Math.random()*100 + 'vw';
+    const dur = 10 + Math.random()*12;
+    p.style.animationDuration = dur + 's';
+    p.style.animationDelay = (Math.random()*dur) + 's';
+    p.style.fontSize = (14 + Math.random()*14) + 'px';
+    petalField.appendChild(p);
+  }
+
+  // ---------------- Lock logic ----------------
+  const CODE = "28102010";
+  let entered = "";
+  const dotsEl = document.getElementById('dots');
+  const keypad = document.getElementById('keypad');
+  const clearBtn = document.getElementById('clearBtn');
+  const backBtn = document.getElementById('backBtn');
+
+  function renderDots(){
+    dotsEl.innerHTML = "";
+    for(let i=0;i<CODE.length;i++){
+      const d = document.createElement('div');
+      d.className = 'dot' + (i < entered.length ? ' filled' : '');
+      dotsEl.appendChild(d);
+    }
+  }
+  renderDots();
+
+  function shakeDots(){
+    dotsEl.classList.add('shake');
+    setTimeout(()=> dotsEl.classList.remove('shake'), 400);
+  }
+
+  function checkCode(){
+    if(entered.length !== CODE.length) return;
+    if(entered === CODE){
+      setTimeout(unlockSequence, 150);
+    } else {
+      shakeDots();
+      setTimeout(()=>{
+        entered = "";
+        renderDots();
+      }, 420);
+    }
+  }
+
+  keypad.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.key');
+    if(!btn) return;
+    if(btn.id === 'clearBtn'){
+      entered = "";
+      renderDots();
+      return;
+    }
+    if(btn.id === 'backBtn'){
+      entered = entered.slice(0,-1);
+      renderDots();
+      return;
+    }
+    if(btn.dataset.num !== undefined && entered.length < CODE.length){
+      entered += btn.dataset.num;
+      renderDots();
+      if(entered.length === CODE.length) checkCode();
+    }
+  });
+
+  // allow physical keyboard too
+  document.addEventListener('keydown', (e)=>{
+    if(document.getElementById('lock-screen').classList.contains('hidden')) return;
+    if(/^[0-9]$/.test(e.key) && entered.length < CODE.length){
+      entered += e.key;
+      renderDots();
+      if(entered.length === CODE.length) checkCode();
+    } else if(e.key === 'Backspace'){
+      entered = entered.slice(0,-1);
+      renderDots();
+    }
+  });
+
+  // ---------------- Unlock sequence ----------------
+  function spawnConfetti(container){
+    const emojis = ["🎉","🎊","💐","🌸","✨","💚","🌷"];
+    const count = 26;
+    for(let i=0;i<count;i++){
+      const c = document.createElement('span');
+      c.className = 'confetti-piece';
+      c.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+      c.style.left = Math.random()*100 + '%';
+      const dur = 2.2 + Math.random()*1.6;
+      c.style.animationDuration = dur + 's';
+      c.style.animationDelay = (Math.random()*0.6) + 's';
+      c.style.fontSize = (16 + Math.random()*14) + 'px';
+      container.appendChild(c);
+    }
+  }
+
+  function unlockSequence(){
+    document.getElementById('lock-screen').classList.add('hidden');
+    const party = document.getElementById('party-screen');
+    party.classList.remove('hidden');
+    spawnConfetti(party);
+
+    setTimeout(()=>{
+      party.classList.add('hidden');
+      document.getElementById('main-content').classList.remove('hidden');
+      document.documentElement.classList.remove('is-locked'); // unlock scrolling now that the code is correct
+      window.scrollTo(0,0);
+    }, 2600);
+  }
+
+  // ---------------- Memory subpages ----------------
+  function openSubpage(id){
+    document.getElementById(id).classList.remove('hidden');
+    document.getElementById(id).scrollTop = 0;
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSubpage(id){
+    document.getElementById(id).classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('openMeet').addEventListener('click', ()=> openSubpage('subpage-meet'));
+  document.getElementById('openConvo').addEventListener('click', ()=> openSubpage('subpage-convo'));
+
+  document.querySelectorAll('[data-close]').forEach(btn=>{
+    btn.addEventListener('click', ()=> closeSubpage(btn.dataset.close));
+  });
+</script>
+
+</body>
+</html>
